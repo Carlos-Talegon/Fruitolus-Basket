@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fruitolus' Basket</title>
+<style>
+:root{--ink:#4a2f73;--pink:#ff7eb6;--orange:#ffb46b;--glass:rgba(255,255,255,.42);--line:rgba(255,255,255,.75)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{font-family:ui-rounded,"SF Pro Rounded","Nunito","Quicksand","Segoe UI",system-ui,sans-serif;color:var(--ink);background:linear-gradient(135deg,#ffd6e7 0%,#e3d8ff 52%,#c8f4e3 100%);display:flex;align-items:center;justify-content:center;padding:max(10px,env(safe-area-inset-top,0px)) 10px max(10px,env(safe-area-inset-bottom,0px));overflow:hidden;user-select:none;-webkit-user-select:none}
+.blob{position:fixed;border-radius:50%;filter:blur(60px);opacity:.55;z-index:0;pointer-events:none}
+.b1{width:340px;height:340px;background:#ffe08a;top:-90px;left:-70px}
+.b2{width:380px;height:380px;background:#ff9ec9;bottom:-120px;right:-80px}
+.b3{width:260px;height:260px;background:#9be7ff;top:40%;left:55%}
+.wrap{position:relative;z-index:1;width:100%;max-width:560px;height:min(100%,780px);display:flex;flex-direction:column;gap:10px}
+.stage{position:relative;z-index:1;width:100%;flex:1;min-height:0;border-radius:34px;background:var(--glass);border:1.5px solid var(--line);box-shadow:0 24px 60px rgba(120,70,170,.28),inset 0 1px 0 rgba(255,255,255,.8);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow:hidden;touch-action:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hud{position:absolute;top:0;left:0;right:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:8px;padding:14px 14px 0;pointer-events:none}
+.pill{background:rgba(255,255,255,.7);border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px;box-shadow:0 4px 14px rgba(120,70,170,.15);white-space:nowrap}
+.hud .left{justify-self:start}.hud .right{justify-self:end;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.score{background:#fff;border-radius:26px;padding:4px 26px 6px;text-align:center;box-shadow:0 8px 22px rgba(255,126,182,.3)}
+.score small{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;opacity:.65;margin-bottom:-2px}
+.score b{font-size:44px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#ff6fae,#ff9d4d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hearts{font-size:20px;letter-spacing:2px}
+.tools{display:flex;justify-content:center;gap:14px;flex:none}
+.tools button{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.8);font-size:18px;cursor:pointer;box-shadow:0 4px 12px rgba(120,70,170,.18);touch-action:manipulation}
+.wind{font-size:21px;font-weight:800;line-height:1.55;margin:4px 0 14px}
+.wind .e{display:inline-block;font-size:34px;vertical-align:-4px;background:none;border:0;padding:0 4px;cursor:pointer;line-height:1;transition:transform .15s}
+.wind .e span{display:inline-block}
+.wind .flip span{transform:scaleX(-1)}
+.wind .e:hover{transform:scale(1.18)}
+.wind .e:focus-visible{outline:3px solid #7a4dff;outline-offset:3px;border-radius:12px}
+.hint{font-size:15px;font-weight:800;margin-top:2px}
+.hint .e{font-size:28px;background:none;border:0;padding:0;cursor:pointer;line-height:1;vertical-align:-4px;transition:transform .15s}
+.hint .e:hover{transform:scale(1.18)}
+.hint .e:focus-visible{outline:3px solid #7a4dff;outline-offset:3px;border-radius:12px}
+.overlay .card{max-height:100%;overflow:auto}
+.fact{margin-top:14px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#eef6ff,#f4ecff);font-size:13px;line-height:1.45;text-align:left;font-weight:600;color:#4a2f73}
+.fact b{display:block;font-size:12px;letter-spacing:.04em;margin-bottom:3px;color:#6a3de8}
+.btn.ghost{background:#fff;color:#6a3de8;box-shadow:0 4px 12px rgba(120,70,170,.2);margin-top:10px;width:100%;flex:none}
+.nameinput{width:100%;border:2px solid #ffc6e0;border-radius:16px;padding:12px 14px;font:700 18px ui-rounded,"Segoe UI",system-ui,sans-serif;color:#4a2f73;text-align:center;outline:none;margin:0 0 12px;background:#fff}
+.nameinput:focus{border-color:#ff7eb6;box-shadow:0 0 0 3px rgba(255,126,182,.3)}
+.tabs{display:flex;gap:6px;margin:6px 0 10px}
+.tabs button{flex:1;border:0;border-radius:999px;padding:9px 6px;font:800 14px ui-rounded,"Segoe UI",system-ui,sans-serif;color:#fff;cursor:pointer;opacity:.5;touch-action:manipulation}
+.tabs button.on{opacity:1;box-shadow:0 0 0 3px rgba(106,61,232,.35)}
+.tabs .t-E{background:linear-gradient(135deg,#ff6fae,#ff9d4d)}.tabs .t-M{background:linear-gradient(135deg,#8a6bff,#4fb4ff)}.tabs .t-D{background:linear-gradient(135deg,#34d399,#38bdf8)}
+.hs{list-style:none;margin:0 0 12px;padding:0;text-align:left;font-weight:700;font-size:15px}
+.hs li{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;border-radius:10px}
+.hs li:nth-child(odd){background:rgba(255,255,255,.6)}
+.hs li.me{background:linear-gradient(135deg,#ffe3f0,#fff0d6);box-shadow:inset 0 0 0 2px #ff7eb6}
+.hs .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hs li.empty{justify-content:center;opacity:.65}
+.card.info{text-align:left;max-width:430px}
+.card.info p{margin:0 0 10px;font-size:clamp(14px,3.8vw,15.5px);line-height:1.5;opacity:1}
+.card.info p.h{font-weight:800;font-size:16px;margin-top:4px}
+.card.info a{color:#6a3de8;font-weight:800}
+.card.info .keys{text-align:center;margin-top:8px}
+.hud .left{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.windbox{visibility:hidden;min-width:66px;min-height:56px;background:rgba(255,255,255,.7);border-radius:14px;box-shadow:0 4px 14px rgba(120,70,170,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 8px 3px}
+.windbox.noarrow svg{display:none}
+.windbox .wlabel.big{font-size:13px;margin:0;text-align:center}
+.windbox .wlabel{font-size:10px;font-weight:800;letter-spacing:.05em;color:#dd2e44;line-height:1;margin-bottom:1px}
+.windbox svg{width:54px;height:37px;display:block}
+body.inplay .windbox{visibility:visible}
+body.intro-story #ov{align-items:flex-start}
+body.intro-story .card{height:68%;max-height:440px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+body.intro-story .story{flex:1;display:flex;flex-direction:column;justify-content:center;overflow:auto}
+body.intro-story .story.pic{overflow:hidden;animation:none}
+body.intro-story .story.guide{justify-content:flex-start}
+.story.guide p{font-size:clamp(14px,3.7vw,16px);line-height:1.45;margin:0 0 9px;text-align:left}
+.story.guide h2.gtitle{text-align:center}
+.cover{flex:1 1 0;min-height:0;width:100%;height:100%;object-fit:contain;display:block;border-radius:14px}
+body.intro-story.bit7 canvas{visibility:visible}
+body.bit7 #ov{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.bit7 .card{background:rgba(255,255,255,.6)}
+body.intro-story .hud,body.intro-story canvas,body.intro-story .credit,body.intro-story .tools,body.intro-story .toast,body.pick .hud,body.pick canvas,body.pick .credit,body.pick .tools,body.pick .toast{visibility:hidden}
+.story p{margin:0 0 12px;font-size:clamp(16px,4.4vw,19px);line-height:1.55;font-weight:700}
+.story{animation:fadein .5s ease both;margin-bottom:6px}
+.story h2{margin:6px 0 10px;font-size:clamp(28px,8vw,40px);line-height:1.1;font-weight:800;background:linear-gradient(135deg,#ff6fae,#ff9d4d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.story h2.gtitle{font-size:clamp(22px,6.2vw,30px);margin:0 0 14px}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.story{animation:none}}
+.tools #bR{font-size:22px}
+.tools #bM{font-size:21px}
+.tools #bM.off{opacity:.4}
+.tools #bI{font:italic 800 21px Georgia,'Times New Roman',serif}
+.tools button:focus-visible,.btn:focus-visible{outline:3px solid #7a4dff;outline-offset:2px}
+.toast{position:absolute;top:96px;left:50%;transform:translate(-50%,-8px);background:#fff;border-radius:999px;padding:8px 16px;font-weight:800;font-size:14px;opacity:0;transition:.35s;pointer-events:none;box-shadow:0 8px 20px rgba(120,70,170,.2);white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.overlay{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(255,240,250,.35);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.overlay.hide{display:none}
+.card{background:rgba(255,255,255,.88);border-radius:30px;padding:26px 24px 22px;text-align:center;max-width:380px;width:100%;box-shadow:0 18px 44px rgba(120,70,170,.25)}
+.card .big{font-size:56px;line-height:1;margin-bottom:6px}
+.card h1{margin:0 0 6px;font-size:32px;font-weight:800}
+.card p{margin:0 0 14px;font-size:14px;line-height:1.5;opacity:.85}
+.card .final{font-size:46px;font-weight:800;margin:0;background:linear-gradient(135deg,#ff6fae,#ff9d4d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btns{display:flex;gap:10px;justify-content:center;margin-top:6px}
+.btn{flex:1;border:0;border-radius:999px;padding:14px 10px;font:800 16px ui-rounded,"SF Pro Rounded","Nunito","Segoe UI",system-ui,sans-serif;color:#fff;cursor:pointer;background:linear-gradient(135deg,#ff6fae,#ff9d4d);box-shadow:0 8px 18px rgba(255,111,174,.4);transition:transform .15s;touch-action:manipulation}
+.btn.b{background:linear-gradient(135deg,#8a6bff,#4fb4ff);box-shadow:0 8px 18px rgba(110,120,255,.4)}
+.btn.c{background:linear-gradient(135deg,#34d399,#38bdf8);box-shadow:0 8px 18px rgba(52,211,153,.4)}
+.btn:hover{transform:translateY(-2px)}.btn:active{transform:translateY(1px)}
+.keys{margin-top:12px;font-size:12px;opacity:.7;line-height:1.5}
+.credit{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;opacity:.55;z-index:2;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.btn,.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="wrap">
+<main class="stage" id="stage">
+  <canvas id="cv"></canvas>
+  <div class="hud">
+    <div class="left"><div class="pill" id="best">Best: 0</div><div class="pill" id="mode">Medium</div></div>
+    <div class="score"><small>SCORE</small><b id="score">0</b></div>
+    <div class="right"><div class="pill hearts" id="hearts" aria-label="Lives">❤️❤️❤️</div><div class="windbox" id="wind" role="img" aria-label="Wind: none"><span class="wlabel">Wind</span><svg viewBox="0 0 72 48" aria-hidden="true"><g id="wa"><path d="M3 24L27 3V14H69V34H27V45Z" fill="#dd2e44" stroke="#dd2e44" stroke-width="3" stroke-linejoin="round"/></g><text id="wn" x="48" y="31" text-anchor="middle" font-size="21" font-weight="800" font-family="Arial,Helvetica,sans-serif" fill="#000">0</text></svg></div></div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <div class="credit">Fruitolus' Basket (v1.0) · by Carlos Talegón</div>
+  <div class="overlay hide" id="infoOv" style="z-index:5"><div class="card info"><div class="infotext"><p><b>Fruitolus’ Basket</b> was made by <a href="https://sites.google.com/view/carlostalegon-spanishteacher" target="_blank" rel="noopener">Carlos Talegón</a>, for his friend Charlie Plumley, who is passionate about creating things, data, renewable energy and wind.</p><p class="h">How this game was developed...</p><p>🌬️ <b>The challenge.</b> Charlie had an idea: a video game powered by real data from a real <a href="https://en.wikipedia.org/wiki/Lawrence_Weston_Wind_Turbine" target="_blank" rel="noopener">wind turbine</a>. He pitched it very well. I’ll admit I wondered whether he was cleverly getting me to work for him for free...</p><p>🌬️ <b>Challenge accepted.</b> I love video games, and Charlie knew it, so the odds of me saying yes were high.</p><p>🌬️ <b>A little help.</b> I’m not an engineer or a programmer, so I turned to Claude AI, as I often do when preparing my interactive Spanish lessons.</p><p>🌬️ <b>Carried away.</b> I got swept up, learned loads along the way and ended up with one of my best games so far. <a href="https://sites.google.com/view/we-make-we-play/free-games" target="_blank" rel="noopener">Judge for yourself</a>.</p><p class="h">More info...</p><p>🌬️ <b>Game cover:</b> To see the game cover... <a href="https://i.ibb.co/rGzx4HrB/Fruitolus-gamecover-02.jpg" target="_blank" rel="noopener">click here</a></p><p>🌬️ <b>Who was Aeolus:</b> To learn more about Aeolus... <a href="https://en.wikipedia.org/wiki/Aeolus_(son_of_Hippotes)" target="_blank" rel="noopener">click here</a></p><p>🌬️ <b>Wind turbines:</b> To learn more about wind turbines... <a href="https://en.wikipedia.org/wiki/Wind_turbine" target="_blank" rel="noopener">click here</a></p><p>🌬️ <b>Wind data:</b> <a href="https://ambitioncommunityenergy.org/" target="_blank" rel="noopener">ACE wind turbine</a>, Lawrence Weston, Bristol. Ambition Community Energy (ACE), CC BY 4.0, doi:10.5281/zenodo.22662372.</p></div><div class="keys">Press the <b>i</b> button again to continue.</div></div></div>
+  <div class="overlay" id="ov"><div class="card" id="card"></div></div>
+</main>
+  <div class="tools"><button id="bR" aria-label="Restart – back to the start screen" title="Back to the start screen">↻</button><button id="bP" aria-label="Pause" title="Pause (P)">⏸</button><button id="bS" aria-label="Sound" title="Sound (M)">🔊</button><button id="bM" aria-label="Game music on/off" aria-pressed="true" title="Game music on/off">♫</button><button id="bI" aria-label="Information" title="Information">i</button></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var FRUITS=['🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🫐','🥝','🍅'];
+var COLORS=['#ff8fc0','#ffc36b','#9ae6b4','#a78bfa','#7dd3fc','#fde68a'];
+var cv=$('cv'),g=cv.getContext('2d'),stage=$('stage'),W=0,H=0,dpr=1;
+function resize(){var r=stage.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;g.setTransform(dpr,0,0,dpr,0,0);if(!st.bx)st.bx=st.tx=W/2;layout()}
+// ---------- state ----------
+var st={mode:'menu',game:'M',score:0,lives:3,fruits:[],parts:[],texts:[],spawnT:.6,shake:0,bx:0,tx:0,dir:0,sound:true,flash:0,breakT:0,infoFrom:'play',windMode:'game',themeOn:true,realOK:false,realTried:false,realSpeed:0,realDeg:0,wind:0,windDir:-1,windN:0,windT:0,bit7:false,dance:[]};
+var MAXL=5,WK_FRAC=.015;
+var LV={E:{name:'Easy',k:1.25,life:25},M:{name:'Medium',k:1,life:50},D:{name:'Difficult',k:.75,life:100}};
+var best={E:0,M:0,D:0};try{['E','M','D'].forEach(function(k){best[k]=+localStorage.getItem('fc_lv_'+k)||0})}catch(e){}
+var FS,BW,BH,floorH,floorY,basketTop;
+function layout(){var K=LV[st.game].k;FS=Math.max(20,Math.min(33,W*.055))*K;BW=Math.max(48,W*.12)*K;BH=BW*.6;floorH=Math.max(26,H*.045);floorY=H-floorH;basketTop=floorY-BH+10;st.bx=clampX(st.bx);st.tx=clampX(st.tx)}
+function clampX(x){return Math.max(BW/2+8,Math.min(W-BW/2-8,x))}
+// ---------- audio: soft bubbly tones ----------
+var AC=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f,d,delay,type,vol,slide){if(!st.sound)return;var c=ac();if(!c)return;var t=c.currentTime+(delay||0),o=c.createOscillator(),v=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(vol||.12,t+.01);v.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(v);v.connect(c.destination);o.start(t);o.stop(t+d+.02)}
+// ---------- Intro music: "The Wind of Aeolus" (epic, Greek, windy) - written as notes and played with the Web Audio API ----------
+// D Phrygian dominant scale, 84 bpm, 16 bars (~46 s) looping: bouzouki-style plucked melody, low drone, war drums,
+// brass-like doubling in the second half, a slow wind sweeping underneath. Plays during the story screens up to the game cover.
+var MUS={on:false,master:null,bus:null,rev:null,noise:null,timer:0,step:0,nextT:0,nodes:[],LEVEL:.5,B8:60/84/2,mel:null};
+var MPH=[[[7,1],[8,.5],[7,.5],[5,1],[4,1],[5,1],[1,1],[0,2]],[[8,1],[10,.5],[8,.5],[7,1],[5,1],[7,1],[5,1],[1,2]],[[12,1],[10,.5],[8,.5],[7,1],[8,1],[7,1],[5,1],[4,2]],[[5,1],[7,1],[8,1],[10,1],[8,1],[7,1],[5,1],[4,1]],
+ [[12,2],[13,1],[12,1],[10,1],[8,1],[7,2]],[[13,2],[16,1],[17,1],[16,1],[13,1],[12,2]],[[10,1],[12,1],[13,1],[12,1],[10,1],[8,1],[7,1],[8,1]],[[7,1],[8,1],[7,1],[5,1],[4,1],[1,1],[0,2]]];
+var MROOT=[0,1,0,5,0,1,10,0],MMIN=[0,0,0,1,0,0,1,0];
+function mhz(semi){return 293.66*Math.pow(2,semi/12)}   // semitones above D4
+function musTable(ph){var m={},pos=0;ph.forEach(function(p){p.forEach(function(n){(m[pos]=m[pos]||[]).push({n:n[0],d:n[1]});pos+=n[1]})});return m}
+function musBuild(){var a=MPH.map(function(p){return p.map(function(n){return[n[0],n[1]*2]})});MUS.mel=musTable(a);MUS.mel2=musTable(MPH2)}
+function musNoise(c){var len=c.sampleRate*2,b=c.createBuffer(1,len,c.sampleRate),d=b.getChannelData(0);for(var i=0;i<len;i++)d[i]=Math.random()*2-1;return b}
+function musIR(c){var len=Math.floor(c.sampleRate*2.4),b=c.createBuffer(2,len,c.sampleRate);for(var ch=0;ch<2;ch++){var d=b.getChannelData(ch);for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6)}return b}
+function musOut(c,n,send){n.connect(MUS.bus);var g=c.createGain();g.gain.value=send;n.connect(g);g.connect(MUS.rev)}
+function musPluck(c,f,t,vol){var o=c.createOscillator(),fl=c.createBiquadFilter(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;fl.type='lowpass';fl.frequency.setValueAtTime(3200,t);fl.frequency.exponentialRampToValueAtTime(800,t+.22);
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+.42);o.connect(fl);fl.connect(g);musOut(c,g,.55);o.start(t);o.stop(t+.5)}
+function musHorn(c,f,t,dur,vol){[-7,7].forEach(function(dt){var o=c.createOscillator(),fl=c.createBiquadFilter(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;o.detune.value=dt;fl.type='lowpass';fl.frequency.value=1100;
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.14);g.gain.setValueAtTime(vol,t+Math.max(.15,dur-.2));g.gain.linearRampToValueAtTime(0,t+dur+.25);o.connect(fl);fl.connect(g);musOut(c,g,.7);o.start(t);o.stop(t+dur+.3)})}
+function musPad(c,k,t,R,M,v){R=R||MROOT;M=M||MMIN;v=v||.04;var root=R[k%8],tri=M[k%8]?[0,3,7]:[0,4,7],dur=MUS.B8*16;
+ tri.forEach(function(n){var o=c.createOscillator(),fl=c.createBiquadFilter(),g=c.createGain();o.type='sawtooth';o.frequency.value=mhz(root+n-12);fl.type='lowpass';fl.frequency.value=650;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.9);g.gain.setValueAtTime(v,t+dur-.4);g.gain.linearRampToValueAtTime(0,t+dur+.8);o.connect(fl);fl.connect(g);musOut(c,g,.8);o.start(t);o.stop(t+dur+.9)});
+ var b=c.createOscillator(),bg=c.createGain();b.type='sine';b.frequency.value=mhz(root-24);bg.gain.setValueAtTime(0,t);bg.gain.linearRampToValueAtTime(v*4,t+.3);bg.gain.setValueAtTime(v*4,t+dur-.3);bg.gain.linearRampToValueAtTime(0,t+dur+.4);b.connect(bg);musOut(c,bg,.2);b.start(t);b.stop(t+dur+.5)}
+function musTaiko(c,t,v){var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(135,t);o.frequency.exponentialRampToValueAtTime(46,t+.25);g.gain.setValueAtTime(v*.6,t);g.gain.exponentialRampToValueAtTime(.0001,t+.7);o.connect(g);musOut(c,g,.45);o.start(t);o.stop(t+.75);
+ var n=c.createBufferSource(),fl=c.createBiquadFilter(),ng=c.createGain();n.buffer=MUS.noise;fl.type='lowpass';fl.frequency.value=900;ng.gain.setValueAtTime(v*.22,t);ng.gain.exponentialRampToValueAtTime(.0001,t+.09);n.connect(fl);fl.connect(ng);musOut(c,ng,.3);n.start(t);n.stop(t+.12)}
+function musFrame(c,t){var n=c.createBufferSource(),fl=c.createBiquadFilter(),g=c.createGain();n.buffer=MUS.noise;fl.type='bandpass';fl.frequency.value=1900;fl.Q.value=1.4;g.gain.setValueAtTime(.13,t);g.gain.exponentialRampToValueAtTime(.0001,t+.1);n.connect(fl);fl.connect(g);musOut(c,g,.3);n.start(t);n.stop(t+.13)}
+function musStepA(c,i,t){var bar=i%8,sec2=i>=64;
+ if(i%16===0)musPad(c,i/16,t);
+ (MUS.mel[i]||[]).forEach(function(n){var f=mhz(n.n),dur=n.d*MUS.B8;
+  if(n.d>=2){var picks=Math.min(8,Math.ceil(n.d/.5));for(var p=0;p<picks;p++)musPluck(c,f,t+p*MUS.B8*.5,.1*(1-p*.05))}else musPluck(c,f,t,.12);
+  if(sec2)musHorn(c,mhz(n.n-12),t,dur,.05)});
+ if(bar===0)musTaiko(c,t,1);if(bar===4)musTaiko(c,t,.55);
+ if(sec2){if(bar===3||bar===7)musTaiko(c,t,.35);if(bar===2||bar===6)musFrame(c,t)}}
+function musTick(){var c=AC;if(!c||!MUS.on)return;while(MUS.nextT<c.currentTime+.35){(MUS.song==='play'?musStepB:musStepA)(c,MUS.step%128,MUS.nextT);MUS.nextT+=MUS.B8;MUS.step++}}
+// ---------- Gameplay music: "Calm of the Aeolian Isle" (calm, mythological, windy) - lyre arpeggios, a flute melody, soft pads, a deep slow drum and a lot of wind ----------
+// D minor / Phrygian-dominant colours, 72 bpm, 16 bars (~53 s) looping. Plays while the basket is in play (not on the story or menu screens).
+var MPH2=[[[7,6],[5,2],[3,4],[7,4]],[[12,6],[10,2],[8,4],[10,4]],[[8,4],[7,2],[5,2],[3,4],[5,4]],[[7,6],[11,2],[14,4],[11,4]],[[15,6],[14,2],[12,4],[10,4]],[[12,4],[10,2],[8,2],[7,4],[10,4]],[[8,4],[10,2],[12,2],[10,4],[8,4]],[[7,4],[5,2],[3,2],[2,4],[0,4]]];
+var PROOT=[0,-4,-7,-5,0,3,-7,-5],PMIN=[1,0,1,0,1,0,1,0];   // Dm, Bb, Gm, A, Dm, F, Gm, A
+function musLyre(c,f,t,vol){var o=c.createOscillator(),fl=c.createBiquadFilter(),g=c.createGain();o.type='triangle';o.frequency.value=f;fl.type='lowpass';fl.frequency.value=2400;
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+1.1);o.connect(fl);fl.connect(g);musOut(c,g,.75);o.start(t);o.stop(t+1.2)}
+function musFlute(c,f,t,dur,vol){var o=c.createOscillator(),o2=c.createOscillator(),h=c.createGain(),g=c.createGain(),lf=c.createOscillator(),lg=c.createGain();o.type='sine';o.frequency.value=f;o2.type='sine';o2.frequency.value=f*2;h.gain.value=.22;
+ lf.frequency.value=5.2;lg.gain.value=3;lf.connect(lg);lg.connect(o.frequency);lg.connect(o2.frequency);
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.35);g.gain.setValueAtTime(vol,t+Math.max(.36,dur-.3));g.gain.linearRampToValueAtTime(0,t+dur+.5);
+ o.connect(g);o2.connect(h);h.connect(g);musOut(c,g,.85);var e=t+dur+.6;o.start(t);o2.start(t);lf.start(t);o.stop(e);o2.stop(e);lf.stop(e)}
+function musStepB(c,i,t){if(i%16===0){musPad(c,i/16,t,PROOT,PMIN,.035);musTaiko(c,t,.22)}
+ var k=Math.floor(i/16)%8,r=PROOT[k],tones=[r,r+(PMIN[k]?3:4),r+7,r+12],pat=[0,1,2,3,2,1,2,1];
+ musLyre(c,mhz(tones[pat[i%8]]),t,.07);
+ (MUS.mel2[i]||[]).forEach(function(n){musFlute(c,mhz(n.n),t,n.d*MUS.B8,.09)})}
+function musicHold(){if(!MUS.on||MUS.held||MUS.song!=='play'||!AC)return;MUS.held=true;clearInterval(MUS.timer);var t=AC.currentTime,g=MUS.master.gain;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(0,t+.4)}
+function musicRelease(){if(!MUS.on||!MUS.held||!AC)return;MUS.held=false;var t=AC.currentTime,g=MUS.master.gain;g.cancelScheduledValues(t);g.setValueAtTime(g.value,t);g.linearRampToValueAtTime(st.sound?MUS.LEVEL:0,t+1.2);MUS.nextT=t+.2;clearInterval(MUS.timer);MUS.timer=setInterval(musTick,90)}
+function toggleTheme(){st.themeOn=!st.themeOn;var b=$('bM');b.classList.toggle('off',!st.themeOn);b.setAttribute('aria-pressed',st.themeOn?'true':'false');if(!st.themeOn){if(MUS.song==='play')musicStop()}else if(st.mode==='play')musicStart('play')}
+function musicStart(song){song=song||'intro';if(song==='play'&&!st.themeOn)return;var c=ac();if(!c||MUS.on)return;MUS.on=true;MUS.held=false;MUS.song=song;var P=song==='play';MUS.B8=P?60/72/2:60/84/2;MUS.LEVEL=P?.15:.5;if(!MUS.mel)musBuild();MUS.noise=musNoise(c);
+ var m=c.createGain();m.gain.value=0;m.gain.linearRampToValueAtTime(st.sound?MUS.LEVEL:0,c.currentTime+2.5);m.connect(c.destination);MUS.master=m;
+ var cv=c.createConvolver();cv.buffer=musIR(c);var wet=c.createGain();wet.gain.value=.5;cv.connect(wet);wet.connect(m);MUS.rev=cv;
+ var dry=c.createGain();dry.gain.value=1;dry.connect(m);MUS.bus=dry;
+ // wind: noise through a slowly sweeping band-pass filter, with a slow swell
+ var ns=c.createBufferSource();ns.buffer=MUS.noise;ns.loop=true;var bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=700;bp.Q.value=1.3;var wg=c.createGain();wg.gain.value=P?.2:.15;
+ var l1=c.createOscillator();l1.frequency.value=P?.07:.11;var l1g=c.createGain();l1g.gain.value=450;l1.connect(l1g);l1g.connect(bp.frequency);
+ var l2=c.createOscillator();l2.frequency.value=P?.045:.07;var l2g=c.createGain();l2g.gain.value=.08;l2.connect(l2g);l2g.connect(wg.gain);
+ ns.connect(bp);bp.connect(wg);musOut(c,wg,.3);ns.start();l1.start();l2.start();MUS.nodes=[ns,l1,l2];
+ // low drone on D and A
+ [mhz(-24),mhz(-17)].forEach(function(f,k){var o=c.createOscillator(),fl=c.createBiquadFilter(),g=c.createGain();o.type='sawtooth';o.frequency.value=f;o.detune.value=k?4:-4;fl.type='lowpass';fl.frequency.value=230;g.gain.value=P?.05:.09;o.connect(fl);fl.connect(g);musOut(c,g,.5);o.start();MUS.nodes.push(o)});
+ MUS.step=0;MUS.nextT=c.currentTime+.15;clearInterval(MUS.timer);MUS.timer=setInterval(musTick,90)}
+function musicStop(){if(!MUS.on)return;MUS.on=false;MUS.held=false;clearInterval(MUS.timer);var c=AC,m=MUS.master,nodes=MUS.nodes.slice();MUS.nodes=[];if(!c||!m)return;var t=c.currentTime;
+ m.gain.cancelScheduledValues(t);m.gain.setValueAtTime(m.gain.value,t);m.gain.linearRampToValueAtTime(0,t+1.6);
+ setTimeout(function(){nodes.forEach(function(n){try{n.stop()}catch(e){}});try{m.disconnect()}catch(e){}},1900)}
+function musicVolume(){if(MUS.master&&AC&&!MUS.held)MUS.master.gain.setTargetAtTime(st.sound?MUS.LEVEL:0,AC.currentTime,.08)}
+// browsers only allow sound after the first click/tap/key press, so wake the audio on any of them
+['pointerdown','keydown','touchstart'].forEach(function(ev){document.addEventListener(ev,function(){ac()},{capture:true,passive:true})});
+var PENT=[523,587,659,784,880,1047,1175,1319];
+var SND={catch_:function(){var n=PENT[st.score%PENT.length];tone(n,.16,0,'sine',.14,n*1.5)},miss:function(){tone(300,.3,0,'triangle',.16,120)},clear:function(){[659,784,988,1319,1568].forEach(function(f,i){tone(f,.18,i*.08,'sine',.12)})},start:function(){[523,659,784,1047].forEach(function(f,i){tone(f,.14,i*.09,'sine',.12)})},over:function(){[784,659,523,392,330].forEach(function(f,i){tone(f,.28,i*.17,'triangle',.14)})}};
+// ---------- helpers ----------
+function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(function(){e.classList.remove('on')},1700)}
+function updateHud(){$('score').textContent=st.score;var h='',nh=Math.max(3,st.lives);for(var i=0;i<nh;i++)h+=i<st.lives?'❤️':'🤍';$('hearts').textContent=h;$('best').textContent='Best: '+best[st.game];$('mode').textContent=LV[st.game].name}
+function burst(x,y,n,colors,sp){for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,s=(.4+Math.random())*sp;st.parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-sp*.5,life:1,r:3+Math.random()*4,c:colors[Math.floor(Math.random()*colors.length)]})}}
+// ---------- difficulty (same idea as the Parachute version: speed ramps inside each 100 points, then eases back) ----------
+function speed(){var s=st.score%100,band=Math.min(Math.floor(st.score/100),6),v=H*(.30+s*.0027+band*.022);return v}
+function spawnEvery(){var s=st.score%100,band=Math.min(Math.floor(st.score/100),6),t=1.05-s*.004-band*.04;t=Math.max(.38,t);return t}
+function maxFruits(){return Math.min(7,3+Math.floor(st.score/60))}
+// ---------- flow ----------
+var introT=0;
+function start(game){if(st.mode==='story'||st.mode==='windpick')return;begin(game)}
+function begin(game){ac();st.game=game;layout();st.score=0;st.lives=3;st.fruits=[];st.parts=[];st.texts=[];st.spawnT=.5;st.breakT=0;st.mode='play';document.body.classList.add('inplay');st.wind=0;newWind();if(st.windMode==='real')realStart();else realStop();$('infoOv').classList.add('hide');st.bx=st.tx=W/2;$('ov').classList.add('hide');$('bP').textContent='⏸';SND.start();updateHud();musicStart('play')}
+function lvBtns(){$('mE').onclick=function(){start('E')};$('mM').onclick=function(){start('M')};$('mD').onclick=function(){start('D')}}
+var STORY=[
+`<p>Many people have heard of Aeolus, the famous ancient Greek god of the winds.</p>`,
+`<p>But what people don't know is just how obsessed he was with those winds. Listen to this...</p>`,
+`<p>Back in ancient Greece, there was no Amazon, so Aeolus relied entirely on the winds to handle all his deliveries.</p><p>If he wanted water? He’d command the wind to bring a raincloud.<br>If he wanted meat? The wind brought that, too.<br>If he wanted fish? Well... you get the picture.</p>`,
+`<p>Because Aeolus never had to interact with anyone to do his shopping, he got incredibly lonely. So, he made a rule: whenever he craved fruit, he’d forgo the wind and call a delivery man instead.</p><p>Ancient history books never recorded the name of that person, but legend remembers him well...</p>`,
+`<p>His name was Fruitolus, the trusty delivery man for all the yummy fruits of Mount Olympus.</p>`,
+`<p>This video game brings back the forgotten story of Fruitolus. But...<br>Stay humble. You aren't a legendary god in this game. You aren't even Fruitolus...<br>You are...</p>`,
+`<img class="cover" src="https://i.ibb.co/rGzx4HrB/Fruitolus-gamecover-02.jpg" alt="Fruitolus game cover" style="object-fit:contain">`,
+`<h2>FRUITOLUS’ BASKET</h2>`,
+`<h2 class="gtitle">Guide to Understand the Winds</h2><p>Aeolus ruled the winds, and now they're yours to face. Choose how wild the sky gets:</p><p>🍃 <b>No wind.</b> Calm skies. The fruit falls straight down and the only thing to beat is your own aim.</p><p>🌬️ <b>Game wind.</b> A red arrow shows which way the wind blows, and the number inside tells you how fierce it is, from 0 to 10. Stay sharp: the wind can change in a heartbeat!</p><p>🌍 <b>Real wind.</b> This is the real thing. The game connects to live data from the wind turbine in Lawrence Weston, so the gusts that push your fruit are the same winds spinning that turbine right now. From the gods of ancient Greece to the wind energy of today and tomorrow, the wind is still powering us.</p>`];
+(new Image()).src='https://i.ibb.co/rGzx4HrB/Fruitolus-gamecover-02.jpg';
+function makeDance(){for(var i=0;i<12;i++)st.dance.push({e:FRUITS[Math.floor(Math.random()*FRUITS.length)],cx:.08+.84*((i*5)%12)/11,cy:.1+.78*Math.random(),ax:.04+.07*Math.random(),ay:.03+.06*Math.random(),ph:Math.random()*6.28,sp:.8+Math.random()*.9})}
+function story(i){if(i>=2&&i<=6)musicStart();else if(i>6)musicStop();st.mode='story';st.bit7=(i===7);document.body.classList.add('intro-story');document.body.classList.toggle('bit7',st.bit7);if(st.bit7&&!st.dance.length)makeDance();var c=$('card');c.onclick=null;
+ c.innerHTML='<div class="story'+(STORY[i].indexOf('<img')===0?' pic':'')+(STORY[i].indexOf('gtitle')>=0?' guide':'')+'">'+STORY[i]+'</div><div class="hint">click&nbsp;&nbsp;&nbsp;<button class="e" id="sw" aria-label="Go on">🌬️</button>&nbsp;&nbsp;&nbsp;to go on</div>';
+ $('sw').onclick=function(){if(i<STORY.length-1)story(i+1);else windPick()};
+ $('ov').classList.remove('hide');try{$('sw').focus({preventScroll:true})}catch(e){}}
+function windPick(){st.mode='windpick';musicStop();realStop();$('infoOv').classList.add('hide');document.body.classList.remove('intro-story','bit7','inplay');document.body.classList.add('pick');var c=$('card');c.onclick=null;
+ c.innerHTML='<div class="big">🍃</div><h1>Choose your wind</h1><div class="btns"><button class="btn" id="wN">No wind</button><button class="btn b" id="wG">Game wind</button><button class="btn c" id="wR">Real wind</button></div>';
+ var pick=function(m){return function(){st.windMode=m;menu()}};$('wN').onclick=pick('none');$('wG').onclick=pick('game');$('wR').onclick=pick('real');c.appendChild(factEl());$('ov').classList.remove('hide')}
+function menu(){st.mode='menu';musicStop();realStop();st.bit7=false;document.body.classList.remove('intro-story','bit7','inplay','pick');var c=$('card');c.innerHTML='<div class="big">🍓🍊🍇</div><h1>Fruitolus&#39; Basket</h1><p>Move the basket and catch the fruit before it touches the floor. Every catch is 1 point. You have 3 lives: each fruit that touches the floor costs one, and when they run out the game is over.</p><div class="btns"><button class="btn" id="mE">Easy</button><button class="btn b" id="mM">Medium</button><button class="btn c" id="mD">Difficult</button></div><button class="btn ghost" id="hsView">🏆 High scores</button><div class="keys">Extra life: Easy gives one every 25 points, Medium every 50 and Difficult every 100 (you can hold up to 5 lives).<br>Easy: bigger basket and fruit. Difficult: smaller basket and fruit.<br>The red arrow shows the wind: it pushes the fruit sideways, and the number is how strong it is (0–10 in Game wind; the live turbine speed in m/s in Real wind).<br>After each miss you get a 3-second break.<br>Move: mouse / finger, ← → or A D · Pause: P · Sound: M · Keys 1 2 3</div>';lvBtns();$('hsView').onclick=function(){HSNEW=null;showScores(st.game,'menu')};$('ov').classList.remove('hide')}
+// ---------- Wind facts: one random fact is shown on the wind choice, pause and high-score screens ----------
+var FACTS=["Wind is simply moving air caused by the Sun unevenly heating the Earth's surface.", "Air naturally moves from areas of high pressure to areas of low pressure, creating breezes and gales.", "In ancient Greek mythology, the god Aeolus was chosen by Zeus to be the keeper of all the winds, keeping them locked in a cave.", "The ancient Greek philosopher Aristotle wrote a book called Meteorologica around 340 BCE, which was one of the very first attempts to explain what wind is and why it blows.", "The Tower of the Winds in Athens, built around the 1st century BCE by the astronomer Andronicus of Cyrrhus, featured a weather vane on top and is considered the world's oldest known weather station.", "Italian scientist Evangelista Torricelli invented the mercury barometer in 1643, proving that air has weight and helping people understand that pressure differences cause wind.", "English scientist Robert Boyle built upon Torricelli's work in the 17th century by studying how gases expand and compress, helping explain how air moves as wind.", "English astronomer Edmond Halley published the first map of global trade winds and monsoons in 1686, figuring out that the Sun's heat drives these massive wind patterns.", "English scientist George Hadley proposed the first correct idea about global trade winds in 1735, explaining how warm air rises near the equator and moves toward the poles.", "Daniel Bernoulli published a famous physics book in 1738 explaining how fast-moving fluids create lower pressure, a rule named Bernoulli's principle that helps explain how wind lifts airplane wings.", "Scottish chemist Alexander Wilson used kites in 1749 to measure air temperature high up in the sky, helping early researchers study upper winds.", "Benjamin Franklin famously used a kite in 1752 during a thunderstorm, showing that lightning and atmospheric electricity are closely linked with stormy wind conditions.", "British meteorologist Luke Howard created the first scientific system for naming clouds in 1803, helping people connect different cloud shapes with changing wind directions.", "Irish admiral Sir Francis Beaufort created the Beaufort Scale in 1805, giving sailors and weather watchers a simple rating system to measure wind strength based on sea conditions.", "French mathematician Gaspard-Gustave de Coriolis worked out the math behind rotating objects in 1835, discovering the Coriolis effect, which explains why winds curve instead of blowing in straight lines.", "American meteorologist William Ferrel built on earlier ideas in 1856 to propose a three-part model of global winds, explaining the mid-latitude westerlies.", "Dutch meteorologist Christoph Buys Ballot formulated Buys Ballot's Law in 1857, which gives a simple rule for finding low-pressure weather systems by standing with your back to the wind.", "French inventors Charles Renard and Arthur Krebs successfully flew the first fully steerable motorized airship in 1884, showing how tricky it is to navigate against real-world wind.", "Norwegian meteorologist Wilhelm Bjerknes founded the Bergen School of Meteorology during World War I, where scientists introduced the modern idea of weather fronts formed by colliding winds.", "Norwegian meteorologist Jacob Bjerknes (son of Wilhelm) used weather station data in 1919 to explain the life cycle of storms driven by interacting warm and cold wind masses.", "English mathematician Lewis Fry Richardson tried to calculate future weather by hand in 1922, solving equations for wind and pressure across a giant grid of points.", "Swedish-American meteorologist Carl-Gustaf Rossby discovered giant planetary wind waves in the upper atmosphere in 1939, now called Rossby waves, which steer major weather systems around the Earth.", "During World War II in 1944, American bomber pilots flying over Japan accidentally discovered the jet stream, a river of extremely fast wind high in the sky.", "American meteorologist Theodore Fujita created the Fujita scale in 1971 to rate tornado wind speeds and damage levels.", "The European Space Agency launched a satellite named ADM-Aeolus in 2018 to map global winds from space using laser beams, named after the Greek wind god.", "The Earth's rotation bends moving wind to the right in the Northern Hemisphere and to the left in the Southern Hemisphere.", "Sea breezes happen during warm days because land heats up faster than the ocean, making warm air rise and drawing cool air in from the sea.", "Land breezes occur at night because land cools down faster than the water, causing the wind to blow from the land out toward the ocean.", "Mountain slopes warm up during the day, causing gentle upslope winds known as anabatic winds.", "At night, heavy cold air flows down mountain slopes under gravity, creating chilly katabatic winds.", "The jet stream is a fast-flowing river of air high in the atmosphere that can reach speeds over 250 miles per hour.", "Trade winds are steady winds that blow from east to west near the equator, which historically helped sailing ships cross oceans.", "The doldrums are a calm area near the equator where trade winds meet, historically known for leaving sailing ships stuck with no wind.", "Horse latitudes are calm, dry regions located about 30 degrees north and south of the equator.", "Monsoons are seasonal winds that bring heavy rains to places like India when temperature differences reverse between land and sea.", "A haboob is a terrifying wall of dust blown across deserts by the powerful collapsing winds of a thunderstorm.", "A derecho is a huge line of severe thunderstorms that produces widespread, damaging straight-line winds over hundreds of miles.", "Chinook winds are warm, dry winds that rush down the Rocky Mountains and can melt snow in just a few hours, earning the nickname \"snow eaters.\"", "Foehn winds are warm, dry winds that slide down the downwind side of mountain ranges in Europe.", "Santa Ana winds are strong, dry winds that blow from deserts toward Southern California, often fueling dangerous wildfires.", "The Khamsin is a hot, dusty desert wind that blows over Egypt and nearby regions during the spring months.", "The Sirocco is a fierce Mediterranean wind that carries red sand and dust all the way from the Sahara Desert into Europe.", "The Mistral is a strong, cold wind that blows from southern France down into the Mediterranean Sea.", "The Pampero is a sudden, sharp blast of cold wind that sweeps across the grassy plains of Argentina and Uruguay.", "A microburst is a small, intense column of sinking air inside a thunderstorm that creates powerful winds capable of damaging homes and airplanes.", "Wind shear is a sudden, unexpected change in wind speed or direction over a very short distance in the air.", "Clear-air turbulence is invisible, bumpy air high in the sky near jet streams that can surprise airplane passengers.", "The highest wind speed ever recorded by a ground instrument outside of a tornado was 253 miles per hour on Barrow Island, Australia, in 1996 during a cyclone.", "Tornadoes produce the most violent winds on Earth, with scientists recording winds reaching up to 302 miles per hour.", "Wind creates amazing landforms over thousands of years by blowing sand and dust to shape rocks and dunes.", "Loess is a special type of fertile, wind-blown dust soil found in thick layers across parts of China, Europe, and North America.", "Wind-blown dust from African deserts travels thousands of miles across the ocean and provides vital nutrients that help tiny ocean plants called phytoplankton grow.", "When strong winds strip away loose soil from a desert, they leave behind a smooth pavement of bare rocks.", "Ventifacts are rocks that have been naturally sandblasted, carved, and polished by wind-blown sand particles.", "British meteorologist George Simpson later updated the Beaufort scale in the 20th century to include land observations alongside sea conditions.", "English physicist Thomas Romney Robinson invented the modern rotating-cup anemometer in 1846 to easily measure wind speed.", "Swiss mathematician Leonhard Euler wrote foundational equations in the 18th century describing how fluids and air move.", "French scientists Claude-Louis Navier and George Gabriel Stokes built on Euler's work in the 19th century to create equations that modern weather forecasters use to model wind and turbulence.", "Norwegian meteorologist Vilhelm Bjerknes proved in 1904 that predicting weather and wind is a physics problem that can be solved with math.", "The launch of the TIROS-1 satellite in 1960 gave researchers their very first view of cloud patterns and storm winds from outer space.", "The first ancient horizontal windmills were built in Persia around the 9th century to grind grain and pump water using the power of the wind.", "Scottish engineer James Blyth built the world's first electricity-generating wind turbine in his garden in 1887 to light up his cottage.", "Danish scientist Poul la Cour discovered in the late 19th century that wind turbines with fewer blades spinning quickly are better at making electricity than old multi-bladed mills.", "Modern wind turbines use aerodynamic blade shapes, just like airplane wings, to capture energy from the moving air.", "The atmospheric boundary layer is the lowest layer of the air where friction from trees, hills, and buildings slows down the wind.", "Polar explorers Paul Siple and Charles Passel invented the wind chill index in 1945 to measure how much colder wind makes the human body feel.", "Atmospheric rivers are long, narrow rivers of moisture in the sky steered by low-level winds that bring heavy rain to coastal areas.", "The Saharan Air Layer is a huge blanket of dry, dusty air that travels across the Atlantic Ocean and can calm down tropical storms by creating strong vertical wind shear.", "Seiches are large sloshing waves in lakes that happen when strong, steady winds push water to one side of the basin.", "Scientists study ancient wind patterns by looking at layers of old wind-blown dust, tree rings, and ice cores frozen for thousands of years.", "Boundary layer separation happens when wind flowing over an object slows down too much, causing bumpy air turbulence.", "Hungarian-American aerodynamicist Theodore von Kármán studied swirling wind patterns called vortex streets, which can cause structures like bridges to shake and even collapse if the wind hits them just right.", "American meteorologist Gustavus Hinrichs first defined the term \"derecho\" in 1888 after studying severe, straight-line wind storms in the American Midwest.", "The power you can get from wind increases very quickly as wind speed goes up—if the wind speed doubles, its energy potential multiplies by eight.", "Sound waves travel faster when they move in the same direction as the wind because the moving air carries the sound along with it.", "Because the Earth spins, global winds are a mix of warm air rising and sinking combined with the planet's rotation.", "Supercomputers use complex mathematical equations to model global wind, temperature, and moisture to forecast the weather.", "Wind profiling radars use radio waves to measure wind speed and direction high up in the sky without needing a physical instrument up there.", "High-altitude wind power is an experimental technology that uses flying kites or turbines to catch stronger, steadier winds high above the ground.", "The phrase \"trade winds\" originally referred to sailing ships following reliable trade routes across the open ocean.", "Atmospheric gravity waves are ripples in the air created when stable wind is pushed upward by mountains or thunderstorms.", "A wind shadow is a sheltered spot behind a hill or building where the wind is blocked, creating a tiny pocket with different weather conditions.", "Brave hurricane hunter pilots fly airplanes straight into the terrifying center of tropical cyclones to measure wind speeds and storm pressure.", "Because of the Earth's spin and wind turning, low-pressure storm systems spin counter-clockwise in the Northern Hemisphere and clockwise in the Southern Hemisphere.", "Desertification gets worse when strong winds blow away topsoil from overgrazed or dry land, turning fertile areas into shifting sand dunes.", "American inventor Charles F. Brush built a huge automatic wind turbine in his Ohio backyard in 1886 to generate electricity for his mansion.", "In big cities, tall skyscrapers act like wind tunnels, speeding up wind gusts and creating tricky conditions at street level.", "Planetary scientists study wind systems and massive dust storms on other worlds, like Mars, using data from space rovers and orbiters.", "Wind blowing across the ocean surface creates waves, transferring energy from the air to the water and driving ocean currents.", "English aviation pioneer Sir George Cayley studied how moving air creates lift and drag in the early 19th century, laying the groundwork for human flight.", "Modern weather forecasters use a worldwide network of ground stations, weather balloons, and satellites to track global wind patterns every single day.", "The Sun heats equatorial regions much more than polar regions, creating the giant global temperature differences that drive all planetary wind.", "Land near large bodies of water often experiences milder wind shifts because water takes longer to heat up and cool down than land.", "Wind vanes have been used for thousands of years, with early designs often shaped like roosters or arrows to show which way the wind is blowing.", "Anemometer cups spin faster when the wind blows harder, giving meteorologists a simple way to calculate wind speed.", "Strong wind can increase evaporation rates from plants and soil, quickly drying out farmland during dry summer months.", "Wind erosion can sometimes carry soil particles all the way from one continent to another across entire oceans.", "Microclimates created by hills and windbreaks can protect delicate crops from harsh, cold winter winds.", "The study of wind dynamics helps architects design safer skyscrapers that can withstand powerful storm gusts without bending too much.", "Understanding how wind works helps scientists predict severe weather, generate clean renewable energy, and protect communities around the world."],lastFact=-1;
+function factEl(){var i;do{i=Math.floor(Math.random()*FACTS.length)}while(i===lastFact&&FACTS.length>1);lastFact=i;var d=document.createElement('div'),b=document.createElement('b'),t=document.createElement('span');d.className='fact';b.textContent='🌬️ Wind Fact #'+(i+1);t.textContent=FACTS[i];d.appendChild(b);d.appendChild(t);return d}
+// ---------- High scores: saved in this browser (localStorage), top 10 per level, names up to 15 characters ----------
+var HS={E:[],M:[],D:[]},HS_KEY='fruitolus_highscores_v1',HS_MAX=10,NAME_MAX=15,HSNEW=null;
+try{var hsRaw=JSON.parse(localStorage.getItem(HS_KEY)||'null');if(hsRaw)['E','M','D'].forEach(function(k){if(Array.isArray(hsRaw[k]))HS[k]=hsRaw[k].filter(function(r){return r&&typeof r.n==='string'&&isFinite(r.s)}).slice(0,HS_MAX)})}catch(e){}
+function hsSave(){try{localStorage.setItem(HS_KEY,JSON.stringify(HS))}catch(e){}}
+function hsQualifies(k,sc){return sc>0&&(HS[k].length<HS_MAX||sc>HS[k][HS[k].length-1].s)}
+function hsAdd(k,name,sc){var e={n:name,s:sc,t:Date.now()};HS[k].push(e);HS[k].sort(function(a,b){return b.s-a.s||a.t-b.t});HS[k]=HS[k].slice(0,HS_MAX);hsSave();return HS[k].indexOf(e)}
+function lastName(){try{return localStorage.getItem('fruitolus_lastname')||''}catch(e){return ''}}
+function showScores(k,mode){var c=$('card');c.onclick=null;
+ c.innerHTML='<div class="big">🏆</div><h1>High scores</h1><div class="tabs"></div><ol class="hs"></ol><div class="btns" id="hsBtns"></div>';
+ var tabs=c.querySelector('.tabs');[['E','Easy'],['M','Medium'],['D','Difficult']].forEach(function(t){var b=document.createElement('button');b.type='button';b.textContent=t[1];b.className='t-'+t[0]+(t[0]===k?' on':'');b.onclick=function(){showScores(t[0],mode)};tabs.appendChild(b)});
+ var ol=c.querySelector('.hs'),arr=HS[k];
+ if(!arr.length){var li0=document.createElement('li');li0.className='empty';li0.textContent='No scores yet: be the first!';ol.appendChild(li0)}
+ arr.forEach(function(r,i){var li=document.createElement('li'),a=document.createElement('span'),b=document.createElement('span');a.className='nm';a.textContent=(i+1)+'. '+r.n;b.textContent=r.s;li.appendChild(a);li.appendChild(b);if(HSNEW&&HSNEW.k===k&&HSNEW.i===i)li.className='me';ol.appendChild(li)});
+ var bt=$('hsBtns');
+ if(mode==='menu'){bt.innerHTML='<button class="btn" id="hsBack">Back</button>';$('hsBack').onclick=function(){HSNEW=null;menu()}}
+ else{bt.innerHTML='<button class="btn" id="mE">Easy</button><button class="btn b" id="mM">Medium</button><button class="btn c" id="mD">Difficult</button>';lvBtns()}
+ c.appendChild(factEl());$('ov').classList.remove('hide')}
+function overCard(lv,sc,nb){var c=$('card');c.onclick=null;
+ c.innerHTML='<div class="big">'+(nb?'🏆':'🍎')+'</div><h1>Game over</h1><p class="final">'+sc+'</p><p>'+(nb?'New best score on '+LV[lv].name+'!':'Best Score ('+LV[lv].name+' mode): '+best[lv])+'</p><div class="btns"><button class="btn" id="mE">Easy</button><button class="btn b" id="mM">Medium</button><button class="btn c" id="mD">Difficult</button></div><button class="btn ghost" id="hsView">🏆 High scores</button>';
+ lvBtns();$('hsView').onclick=function(){HSNEW=null;showScores(lv,'over')}}
+function nameCard(lv,sc,nb){var c=$('card');c.onclick=null;
+ c.innerHTML='<div class="big">🏆</div><h1>New high score!</h1><p class="final">'+sc+'</p><p>'+LV[lv].name+' mode: enter your name (up to '+NAME_MAX+' characters)</p><input id="hsName" class="nameinput" type="text" maxlength="'+NAME_MAX+'" autocomplete="off" spellcheck="false" placeholder="Your name" aria-label="Your name"><div class="btns"><button class="btn" id="hsSave">Save</button></div><button class="btn ghost" id="hsSkip">Skip</button>';
+ var inp=$('hsName');inp.value=lastName().slice(0,NAME_MAX);
+ function save(){var n=inp.value.replace(/\s+/g,' ').trim().slice(0,NAME_MAX)||'Player';try{localStorage.setItem('fruitolus_lastname',n)}catch(e){}var i=hsAdd(lv,n,sc);HSNEW={k:lv,i:i};showScores(lv,'over')}
+ $('hsSave').onclick=save;$('hsSkip').onclick=function(){overCard(lv,sc,nb)};inp.addEventListener('keydown',function(e){if(e.key==='Enter')save()});
+ setTimeout(function(){try{inp.focus();inp.select()}catch(e){}},750)}
+function over(){st.mode='over';realStop();musicStop();SND.over();var lv=st.game,sc=st.score,nb=sc>best[lv];if(nb){best[lv]=sc;try{localStorage.setItem('fc_lv_'+lv,sc)}catch(e){}}updateHud();
+ HSNEW=null;if(hsQualifies(lv,sc))nameCard(lv,sc,nb);else overCard(lv,sc,nb);
+ setTimeout(function(){if(st.mode==='over')$('ov').classList.remove('hide')},700)}
+function pause(){if(st.mode==='play'){st.mode='paused';musicHold();$('bP').textContent='▶️';var c=$('card');c.innerHTML='<div class="big">⏸</div><h1>Paused</h1><div class="btns"><button class="btn" id="mR">Resume</button></div>';$('mR').onclick=pause;c.appendChild(factEl());$('ov').classList.remove('hide')}else if(st.mode==='paused'){st.mode='play';st.breakT=3;musicRelease();$('bP').textContent='⏸';$('ov').classList.add('hide')}}
+// ---------- Real wind: live data from the ACE (Lawrence Weston) turbine, read every 5 seconds ----------
+var ACE_URL='https://ace-api.duckdns.org/v1/sites/ace/data/site_instantaneous/latest?resolution=1s&fields=aggregate_wind_speed,aggregate_wind_direction&limit=5';
+var REAL_EVERY_MS=5000,realTimer=0,realOn=false,realBusy=false,realFail=0;
+function lastVal(a){if(!a)return null;for(var i=a.length-1;i>=0;i--){if(a[i]!==null&&a[i]!==undefined)return{v:a[i],i:i}}return null}
+function ewDir(deg){var x=Math.sin(deg*Math.PI/180);return Math.abs(x)<1e-6?0:(x>0?1:-1)}  // only the east (+1 = right) / west (-1 = left) part of the direction counts
+// How hard the wind really pushes the fruit. Game wind: the shown number (0-10). Real wind: the shown turbine speed is softened:
+// below 5 as is, 5 to under 6 divided by 2, 6 and above divided by 3 (the number on screen is always the true speed).
+function pushOf(){var v=st.windN;if(st.windMode!=='real')return Math.min(v,10);return v<5?v:(v<6?v/2:v/3)}
+function applyReal(){if(st.realOK){st.windN=st.realSpeed;st.windDir=ewDir(st.realDeg)}else{st.windN=0;st.windDir=0}showWind()}
+function realFetch(){if(realBusy||!realOn)return;realBusy=true;var ctl=window.AbortController?new AbortController():null,to=setTimeout(function(){if(ctl)ctl.abort()},4000);
+ fetch(ACE_URL,{cache:'no-store',signal:ctl?ctl.signal:undefined}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(d){
+  var se=d.series||{},sp=lastVal(se.aggregate_wind_speed),di=lastVal(se.aggregate_wind_direction),ts=d.timestamps||[],last=ts.length?ts[ts.length-1]:null,fresh=true;
+  if(last){var ms=last>1e12?last:last*1000;fresh=(Date.now()-ms)<120000}
+  if(sp&&di&&fresh&&isFinite(sp.v)&&isFinite(di.v)){st.realSpeed=Math.max(0,+sp.v);st.realDeg=((+di.v%360)+360)%360;st.realOK=true;realFail=0}else{realFail=3;st.realOK=false}
+ }).catch(function(){if(++realFail>=3)st.realOK=false}).then(function(){clearTimeout(to);realBusy=false;st.realTried=true;if(realOn&&st.windMode==='real')applyReal()})}
+function realStart(){realStop();realOn=true;realFail=0;st.realOK=false;st.realTried=false;realFetch();realTimer=setInterval(realFetch,REAL_EVERY_MS)}
+function realStop(){realOn=false;clearInterval(realTimer)}
+function showWind(){var box=$('wind'),lb=box.querySelector('.wlabel'),m=st.windMode;
+ if(m==='none'){box.classList.add('noarrow');lb.classList.add('big');lb.textContent='No Wind';box.setAttribute('aria-label','No wind');return}
+ if(m==='real'&&!(st.realOK&&st.windDir!==0)){var note=st.realOK?'N/S wind':(st.realTried?'no data':'connecting...');box.classList.add('noarrow');lb.classList.add('big');lb.innerHTML='Real Wind<br><span style="font-size:10px;font-weight:700">'+note+'</span>';box.setAttribute('aria-label','Real wind: '+note);return}
+ box.classList.remove('noarrow');lb.classList.remove('big');lb.textContent=m==='real'?'Real Wind':'Game Wind';
+ var txt=m==='real'?st.windN.toFixed(1):String(st.windN);
+ $('wn').textContent=txt;$('wn').setAttribute('font-size',txt.length>3?16:21);$('wn').setAttribute('x',st.windDir<0?48:24);$('wa').setAttribute('transform',st.windDir<0?'':'translate(72,0) scale(-1,1)');
+ box.setAttribute('aria-label','Wind strength '+txt+' blowing to the '+(st.windDir<0?'left':'right'))}
+function newWind(){if(st.windMode==='none'){st.windN=0;st.windDir=-1;st.windT=1e9;showWind();return}if(st.windMode==='real'){st.windT=1e9;applyReal();return}st.windDir=Math.random()<.5?-1:1;st.windN=Math.floor(Math.random()*11);st.windT=7+Math.random()*6;showWind()}
+function restart(){clearTimeout(introT);$('card').onclick=null;st.fruits=[];st.parts=[];st.texts=[];st.breakT=0;st.lives=3;st.score=0;$('bP').textContent='⏸';$('infoOv').classList.add('hide');updateHud();windPick()}
+function info(){if(st.mode==='intro')return;var o=$('infoOv');if(o.classList.contains('hide')){st.infoFrom=st.mode;if(st.mode==='play'){st.mode='info';musicHold()}o.classList.remove('hide')}else{o.classList.add('hide');if(st.mode==='info'){st.mode='play';st.breakT=3;musicRelease()}}}
+function catchIt(f){st.score++;SND.catch_();burst(f.x,basketTop+8,10,COLORS,150);st.flash=.25;
+ if(st.score%LV[st.game].life===0&&st.lives<MAXL){st.lives++;SND.clear();toast('💖 Extra life!')}
+ updateHud()}
+function missIt(f){st.lives--;st.shake=.28;SND.miss();burst(f.x,floorY,12,['#ff8a8a','#ffb3b3','#ffd1a8'],130);updateHud();if(st.lives<=0)over();else st.breakT=3}
+// ---------- update ----------
+function update(dt){
+ if(st.dir)st.tx=clampX(st.tx+st.dir*W*1.15*dt);
+ if(st.mode==='story'&&st.bit7)st.tx=clampX(W/2+Math.sin(performance.now()/900)*W*.3);
+ st.bx+=(st.tx-st.bx)*Math.min(1,dt*20);
+ if(st.mode==='play'){
+  if(st.breakT>0){st.breakT-=dt;if(st.breakT<=0){st.breakT=0;st.spawnT=.5}}
+  else{
+  st.wind+=(st.windDir*pushOf()-st.wind)*Math.min(1,dt*1.2);st.windT-=dt;if(st.windT<=0)newWind();
+  st.spawnT-=dt;
+  if(st.spawnT<=0&&st.fruits.length<maxFruits()){
+   var x,ok=false,tries=0;while(!ok&&tries++<10){x=FS/2+8+Math.random()*(W-FS-16);ok=!st.fruits.some(function(f){return f.y<FS*2.2&&Math.abs(f.x-x)<FS*1.1})}
+   st.fruits.push({x:x,y:-FS/2,e:FRUITS[Math.floor(Math.random()*FRUITS.length)],k:.9+Math.random()*.25,rot:(Math.random()-.5)*.6,spin:(Math.random()-.5)*1.4,passed:false});
+   st.spawnT=spawnEvery()*(.6+Math.random()*.8)}
+  var v=speed(),keep=[];
+  for(var i=0;i<st.fruits.length;i++){var f=st.fruits[i],pb=f.y+FS/2;f.vx=(f.vx||0)+(st.wind*W*WK_FRAC-(f.vx||0))*Math.min(1,dt*3);f.x=Math.max(FS/2,Math.min(W-FS/2,f.x+f.vx*dt));f.y+=v*f.k*dt;f.rot+=f.spin*dt;var b=f.y+FS/2,gone=false;
+   if(!f.passed&&pb<basketTop+8&&b>=basketTop+8){f.passed=true;if(Math.abs(f.x-st.bx)<=BW/2+FS*.15){catchIt(f);gone=true}}
+   if(!gone&&b>=floorY){missIt(f);gone=true;if(st.mode==='over'){keep=[];break}}
+   if(!gone)keep.push(f)}
+  if(st.breakT>0){keep.forEach(function(f){burst(f.x,f.y,8,COLORS,90)});keep=[]}
+  st.fruits=keep}}
+ st.parts=st.parts.filter(function(p){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=420*dt;p.life-=dt*1.8;return p.life>0});
+ st.texts=st.texts.filter(function(t){t.y-=50*dt;t.t-=dt*1.3;return t.t>0});
+ if(st.shake>0)st.shake-=dt;if(st.flash>0)st.flash-=dt}
+// ---------- draw ----------
+function rr(x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()}
+function drawBasket(){
+ var x=st.bx-BW/2,y=basketTop,sq=1+(st.flash>0?st.flash*.35:0);
+ g.save();g.translate(st.bx,y+BH);g.scale(1/sq,sq);g.translate(-st.bx,-(y+BH));
+ g.fillStyle='rgba(120,70,170,.18)';g.beginPath();g.ellipse(st.bx,floorY+4,BW*.5,6,0,0,7);g.fill();
+ var gr=g.createLinearGradient(0,y,0,y+BH);gr.addColorStop(0,'#ffcf8a');gr.addColorStop(1,'#f08f4f');
+ g.fillStyle=gr;g.beginPath();g.moveTo(x+4,y+8);g.lineTo(x+BW-4,y+8);g.lineTo(x+BW*.86,y+BH);g.quadraticCurveTo(st.bx,y+BH+8,x+BW*.14,y+BH);g.closePath();g.fill();
+ g.save();g.clip();g.strokeStyle='rgba(255,255,255,.4)';g.lineWidth=2;
+ for(var i=1;i<5;i++){var yy=y+8+i*(BH-8)/5;g.beginPath();g.moveTo(x,yy);g.quadraticCurveTo(st.bx,yy+7,x+BW,yy);g.stroke()}
+ for(var j=1;j<7;j++){var xx=x+j*BW/7;g.beginPath();g.moveTo(xx,y+8);g.lineTo(st.bx+(xx-st.bx)*.8,y+BH);g.stroke()}
+ g.restore();
+ var rg=g.createLinearGradient(0,y-4,0,y+14);rg.addColorStop(0,'#fff0cf');rg.addColorStop(1,'#ffc47a');g.fillStyle=rg;rr(x-4,y-3,BW+8,16,8);g.fill();
+ g.restore()}
+function drawFloor(){var gr=g.createLinearGradient(0,floorY,0,H);gr.addColorStop(0,'rgba(255,255,255,.75)');gr.addColorStop(1,'rgba(255,214,238,.9)');g.fillStyle=gr;rr(10,floorY,W-20,floorH-8,16);g.fill()}
+function drawDance(){var t=performance.now()/1000;g.save();g.textAlign='center';g.textBaseline='middle';g.font=(FS*1.7)+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+ st.dance.forEach(function(d){var x=d.cx*W+Math.sin(t*d.sp+d.ph)*d.ax*W,y=d.cy*H+Math.cos(t*d.sp*1.3+d.ph)*d.ay*H;g.save();g.translate(x,y);g.rotate(Math.sin(t*d.sp*1.7+d.ph)*.5);g.shadowColor='rgba(120,70,170,.25)';g.shadowBlur=10;g.shadowOffsetY=4;g.fillText(d.e,0,0);g.restore()});g.restore()}
+function draw(){
+ g.clearRect(0,0,W,H);g.save();
+ if(st.shake>0)g.translate((Math.random()-.5)*8*st.shake*3,(Math.random()-.5)*5*st.shake*3);
+ drawFloor();if(st.mode==='story'&&st.bit7)drawDance();
+ g.textAlign='center';g.textBaseline='middle';g.font=FS+'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+ st.fruits.forEach(function(f){g.save();g.translate(f.x,f.y);g.rotate(f.rot);g.shadowColor='rgba(120,70,170,.25)';g.shadowBlur=10;g.shadowOffsetY=4;g.fillText(f.e,0,0);g.restore()});
+ drawBasket();
+ if(st.breakT>0&&st.mode==='play'){var n=Math.ceil(st.breakT),fr=st.breakT%1||1,sz=Math.min(W*.34,170)*(.85+.3*fr);g.save();g.globalAlpha=.3+.7*fr;g.textAlign='center';g.textBaseline='middle';g.font='800 '+sz+'px ui-rounded,"Segoe UI",system-ui,sans-serif';g.lineWidth=10;g.strokeStyle='#ff7eb6';g.lineJoin='round';g.strokeText(n,W/2,H*.38);g.fillStyle='#fff';g.fillText(n,W/2,H*.38);g.globalAlpha=.85;g.font='800 18px ui-rounded,"Segoe UI",system-ui,sans-serif';g.fillStyle='#4a2f73';g.fillText('Get ready…',W/2,H*.38+sz*.62);g.restore()}
+ st.parts.forEach(function(p){g.globalAlpha=Math.max(0,p.life);g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,p.r*p.life+1,0,7);g.fill()});g.globalAlpha=1;
+ g.font='800 22px ui-rounded,"Segoe UI",system-ui,sans-serif';g.fillStyle='#ff5fa2';
+ st.texts.forEach(function(t){g.globalAlpha=Math.max(0,t.t);g.fillText(t.s,t.x,t.y);});g.globalAlpha=1;
+ g.restore()}
+// ---------- loop ----------
+var last=0;
+function frame(ts){requestAnimationFrame(frame);var dt=Math.min(.05,(ts-last)/1000||0);last=ts;try{if(st.mode!=='paused'&&st.mode!=='info')update(dt);draw()}catch(e){console.error(e)}}
+// ---------- input ----------
+function px(e){var r=stage.getBoundingClientRect();return e.clientX-r.left}
+stage.addEventListener('pointerdown',function(e){if(e.target.closest('button'))return;ac();st.tx=clampX(px(e))});
+stage.addEventListener('pointermove',function(e){if(e.pointerType==='mouse'||e.buttons)st.tx=clampX(px(e))});
+document.addEventListener('keydown',function(e){if(e.target&&e.target.tagName==='INPUT')return;var k=e.key.toLowerCase();
+ if(k==='arrowleft'||k==='a'){e.preventDefault();st.dir=-1}else if(k==='arrowright'||k==='d'){e.preventDefault();st.dir=1}
+ else if(k==='1')start('E');else if(k==='2')start('M');else if(k==='3')start('D');else if(k==='m')toggleSound();
+ else if(k==='p'||(k==='escape')){pause()}});
+document.addEventListener('keyup',function(e){var k=e.key.toLowerCase();if((k==='arrowleft'||k==='a')&&st.dir===-1)st.dir=0;if((k==='arrowright'||k==='d')&&st.dir===1)st.dir=0});
+function toggleSound(){st.sound=!st.sound;$('bS').textContent=st.sound?'🔊':'🔇';musicVolume()}
+$('bR').onclick=restart;$('bI').onclick=info;$('bP').onclick=pause;$('bS').onclick=toggleSound;$('bM').onclick=toggleTheme;
+document.addEventListener('visibilitychange',function(){if(document.hidden&&st.mode==='play')pause()});
+window.addEventListener('resize',resize);
+resize();updateHud();story(0);requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
