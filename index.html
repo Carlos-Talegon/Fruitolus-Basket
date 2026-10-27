@@ -534,7 +534,7 @@ function touch2(e,down){if(st.mode!=='play')return;var x=px(e),p;
  if(coop()){if(down){var taken=Object.keys(ptr).map(function(q){return ptr[q]}),d0=Math.abs(x-st.bx),d1=Math.abs(x-st.bx2);p=d0<=d1?0:1;if(taken.indexOf(p)>=0&&taken.indexOf(1-p)<0)p=1-p;ptr[e.pointerId]=p}else p=ptr[e.pointerId];
   if(p===undefined)return;if(p)st.tx2=clampX(x);else st.tx=clampX(x)}
  else if(PS[0]){var wc=colW();if(down)ptr[e.pointerId]=(x<wc+5?0:1);p=ptr[e.pointerId];if(p===undefined)return;PS[p].tx=x-(p?wc+10:0)}}
-stage.addEventListener('pointerdown',function(e){if(e.target.closest('button'))return;ac();if(st.players===2){try{stage.setPointerCapture(e.pointerId)}catch(x){}touch2(e,true);return}st.tx=clampX(px(e))});
+stage.addEventListener('pointerdown',function(e){if(e.target.closest('button,a,.overlay'))return;ac();if(st.players===2){try{stage.setPointerCapture(e.pointerId)}catch(x){}touch2(e,true);return}st.tx=clampX(px(e))});
 stage.addEventListener('pointermove',function(e){if(st.players===2){if((e.pointerId in ptr)&&(e.pointerType!=='mouse'||e.buttons))touch2(e,false);return}if(e.pointerType==='mouse'||e.buttons)st.tx=clampX(px(e))});
 ['pointerup','pointercancel'].forEach(function(ev){stage.addEventListener(ev,function(e){delete ptr[e.pointerId]})});
 document.addEventListener('keydown',function(e){if(e.target&&e.target.tagName==='INPUT')return;var k=e.key.toLowerCase();
