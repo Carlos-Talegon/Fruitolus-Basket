@@ -248,8 +248,9 @@ function toast(t){if(is2P()&&st.mode==='play')t=pName(curP)+': '+t;var e=$('toas
 function updateHud(){$('score').textContent=st.score;var h='',nh=Math.max(3,st.lives);for(var i=0;i<nh;i++)h+=i<st.lives?'❤️':'🤍';$('hearts').textContent=h;$('best').textContent='Best: '+best[st.game];$('mode').textContent=LV[st.game].name}
 function burst(x,y,n,colors,sp){for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,s=(.4+Math.random())*sp;st.parts.push({x:x,y:y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-sp*.5,life:1,r:3+Math.random()*4,c:colors[Math.floor(Math.random()*colors.length)]})}}
 // ---------- difficulty (same idea as the Parachute version: speed ramps inside each 100 points, then eases back) ----------
-function speed(){var s=st.score%100,band=Math.min(Math.floor(st.score/100),6),v=H*(.30+s*.0027+band*.022);return v}
-function spawnEvery(){var s=st.score%100,band=Math.min(Math.floor(st.score/100),6),t=1.05-s*.004-band*.04;t=Math.max(.38,t);return t}
+function speed(){var n=st.score,v=n<=100?.30+n*.0027:.57+(n-100)*.0012;return H*Math.min(.85,v)}
+var GAPF={E:.95,M:.9,D:.8};
+function spawnEvery(){var n=st.score,t=n<=100?1.05-n*.004:.65-(n-100)*.0012;t=Math.max(.38,t);return t*GAPF[st.game]}
 function maxFruits(){return Math.min(7,3+Math.floor(st.score/60))}
 // ---------- flow ----------
 var introT=0;
