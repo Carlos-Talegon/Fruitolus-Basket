@@ -82,7 +82,7 @@ body.coop #best{display:none}
 .card.info .infotext{flex:1 1 auto;min-height:0;overflow:auto}
 .card.info #infoClose{display:block;width:100%;flex:none;margin-top:10px}
 .card.info p{margin:0 0 10px;font-size:clamp(14px,3.8vw,15.5px);line-height:1.5;opacity:1}
-.card.info p.h{font-weight:800;font-size:16px;margin-top:4px}
+.card.info p.h{font-weight:800;font-size:16px;margin-top:22px}
 .card.info a{color:#6a3de8;font-weight:800}
 .card.info .keys{text-align:center;margin-top:8px}
 .hud .left{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
@@ -274,12 +274,12 @@ var INTRO_AUDIO=['01','02','03','04','05','06','07'].map(function(n){return 'aud
 var introAud=null,introWant=-1;
 function stopIntroAudio(){introWant=-1;if(introAud){try{introAud.pause()}catch(e){}introAud=null}}
 // Cover narration (07.mp3) is 20% louder: a browser's normal volume tops out at 100%, so it goes through a x1.2 gain (web hosting). Opened straight from a file on the computer, browsers silence that route, so there the music is lowered instead (see story()).
-var NARR_BOOST=1.2,NARR_WEB=(location.protocol!=='file:');
-function boostNarr(a){if(!NARR_WEB)return;try{var c=ac();if(!c)return;var src=c.createMediaElementSource(a),gn=c.createGain();gn.gain.value=NARR_BOOST;src.connect(gn);gn.connect(c.destination)}catch(e){}}
-function playIntroAudio(i){stopIntroAudio();if(i<0||i>=INTRO_AUDIO.length)return;introWant=i;var a=new Audio(INTRO_AUDIO[i]);a.preload='auto';a.muted=!st.sound;if(i===6)boostNarr(a);introAud=a;try{var pr=a.play();if(pr&&pr.catch)pr.catch(function(){})}catch(e){}}
+var NARR_BOOST=1.2,NARR_WEB=(location.protocol!=='file:'),NARR_VOL=.8;   // NARR_VOL: narrator volume is 20% lower on every story screen
+function boostNarr(a){if(!NARR_WEB)return;try{var c=ac();if(!c)return;var src=c.createMediaElementSource(a),gn=c.createGain();gn.gain.value=NARR_BOOST*NARR_VOL;src.connect(gn);gn.connect(c.destination)}catch(e){}}
+function playIntroAudio(i){stopIntroAudio();if(i<0||i>=INTRO_AUDIO.length)return;introWant=i;var a=new Audio(INTRO_AUDIO[i]);a.preload='auto';a.muted=!st.sound;a.volume=(i===6&&NARR_WEB)?1:NARR_VOL;if(i===6)boostNarr(a);introAud=a;try{var pr=a.play();if(pr&&pr.catch)pr.catch(function(){})}catch(e){}}
 // browsers block sound until the first click/key press: if screen 1's audio was blocked, start it on the first click/key press (except on the 'go on' button)
 ['pointerdown','keydown'].forEach(function(ev){document.addEventListener(ev,function(e){if(introWant<0||!introAud||!introAud.paused||introAud.ended)return;if(e.target&&e.target.closest&&e.target.closest('#sw'))return;try{var pr=introAud.play();if(pr&&pr.catch)pr.catch(function(){})}catch(x){}},{capture:true,passive:true})});
-function story(i){if(i<=6)playIntroAudio(i);else stopIntroAudio();document.body.classList.remove('pick');MUS.duck=i===6&&!NARR_WEB?.75/NARR_BOOST:(i<=6?.75:1);if(i>=6&&i<=7){if(MUS.on)musicVolume(.4);else musicStart()}else if(i>7)musicStop();st.mode='story';st.bit7=(i===7);document.body.classList.add('intro-story');document.body.classList.toggle('bit7',st.bit7);if(st.bit7&&!st.dance.length)makeDance();var c=$('card');c.onclick=null;
+function story(i){if(i<=6)playIntroAudio(i);else stopIntroAudio();document.body.classList.remove('pick');MUS.duck=i===6&&!NARR_WEB?.75/NARR_BOOST:(i<=6?.75:1);if(i>=2&&i<=7){if(MUS.on)musicVolume(.4);else musicStart()}else if(i>7)musicStop();st.mode='story';st.bit7=(i===7);document.body.classList.add('intro-story');document.body.classList.toggle('bit7',st.bit7);if(st.bit7&&!st.dance.length)makeDance();var c=$('card');c.onclick=null;
  var sbody='<div class="story'+(STORY[i].indexOf('<img')===0?' pic':'')+(STORY[i].indexOf('gtitle')>=0?' guide':'')+'">'+STORY[i]+'</div>';
  if(i===7){c.innerHTML=sbody+'<div class="btns pbtns"><button class="btn" id="p1">🌬️ 1 Player</button><button class="btn b" id="p2">🌬️ 2 Players (competitive) <span style="display:inline-block;transform:scaleX(-1)">🌬️</span></button><button class="btn c" id="p3">🌬️🌬️ 2 Players (cooperative)</button></div>';
   $('p1').onclick=function(){st.players=1;st.coop=false;keySetup('story')};$('p2').onclick=function(){st.players=2;st.coop=false;keySetup('story')};$('p3').onclick=function(){st.players=2;st.coop=true;keySetup('story')};$('ov').classList.remove('hide');try{$('p1').focus({preventScroll:true})}catch(e){}}
@@ -358,8 +358,8 @@ function showWind(){var box=$('wind'),lb=box.querySelector('.wlabel'),m=st.windM
 function newWind(){if(st.windMode==='none'){st.windN=0;st.windDir=-1;st.windT=1e9;showWind();return}if(st.windMode==='real'){st.windT=1e9;applyReal();return}st.windDir=Math.random()<.5?-1:1;st.windN=Math.floor(Math.random()*11);st.windT=7+Math.random()*6;showWind()}
 function restart(){clearTimeout(introT);$('card').onclick=null;st.fruits=[];st.parts=[];st.texts=[];st.breakT=0;st.lives=3;st.score=0;$('bP').textContent='⏸';$('infoOv').classList.add('hide');updateHud();windPick()}
 function info(){if(st.mode==='intro')return;var o=$('infoOv');if(o.classList.contains('hide')){st.infoFrom=st.mode;if(st.mode==='play'){st.mode='info';musicHold()}o.classList.remove('hide')}else{o.classList.add('hide');if(st.mode==='info'){st.mode='play';resumeBreak();musicRelease()}}}
-// Falling items: fruits, plus a flashing heart (catching it gives a life, ~4% of items while you have fewer than 5 lives). Same fall speed and wind as fruit.
-function newFruit(x){var r=Math.random(),sp=null;if(r>=.06&&r<.10&&st.lives<MAXL)sp='heart';
+// Falling items: fruits, plus a flashing heart (catching it gives a life, ~1.5% of items while you have fewer than 5 lives). Same fall speed and wind as fruit.
+function newFruit(x){var r=Math.random(),sp=null;if(r>=.06&&r<.075&&st.lives<MAXL)sp='heart';
  var f={x:x,y:-FS/2,e:sp==='heart'?'❤️':FRUITS[Math.floor(Math.random()*FRUITS.length)],sp:sp,k:.9+Math.random()*.25,rot:(Math.random()-.5)*.6,spin:(Math.random()-.5)*1.4,passed:false};if(sp){f.rot=0;f.spin=0}return f}
 function catchSpecial(f){
  {if(st.lives<MAXL){st.lives++;SND.clear();toast('❤️ Extra life!');updateHud()}burst(f.x,basketTop+4,14,['#ff6f91','#ff9ab0','#ffd1dc'],150);st.flash=.25}}
@@ -407,7 +407,10 @@ function drawFB(cx,cy,h,suf,col){var u=h/10,x0=cx-(suf?12.4:8.6)*u,y0=cy-5*u;
    if(suf==='1'){L(d+2.2,0,d+2.2,10,1.6);L(d+.6,10,d+3.8,10,.62);L(d+.5,2.2,d+2.2,.1,.62)}
    else{g.beginPath();g.moveTo(x0+ox+(d+.7)*u,y0+oy+2.8*u);g.bezierCurveTo(x0+ox+(d+1)*u,y0+oy+.2*u,x0+ox+(d+5.3)*u,y0+oy+.2*u,x0+ox+(d+5.3)*u,y0+oy+3*u);g.bezierCurveTo(x0+ox+(d+5.3)*u,y0+oy+5.6*u,x0+ox+(d+1.6)*u,y0+oy+7.4*u,x0+ox+(d+.7)*u,y0+oy+9.7*u);g.stroke();L(d+.5,10,d+5.9,10,.62)}}}
  pass(u*.35,u*.45,'rgba(255,240,205,.9)');pass(0,0,col||'#7a3a14')}
-function drawBasket(bx,blue,suf){
+function nameTag(p){var n=NAMES[p]?Array.from(cleanName(NAMES[p])).slice(0,3).join('').trim().toUpperCase():'';return n}
+function drawNameTag(cx,cy,h,txt,col){g.save();g.textAlign='center';g.textBaseline='middle';var fs=h*1.55*.75,f=function(z){return '800 '+z+'px \"Cinzel\",\"Trajan Pro\",\"Palatino Linotype\",Georgia,serif'};g.font=f(fs);var mw=BW*.66,w=g.measureText(txt).width;if(w>mw){fs*=mw/w;g.font=f(fs)}
+ g.fillStyle='rgba(255,240,205,.9)';g.fillText(txt,cx+h*.035,cy+h*.045);g.fillStyle=col||'#7a3a14';g.fillText(txt,cx,cy);g.restore()}
+function drawBasket(bx,blue,suf,tag){
  var x=bx-BW/2,y=basketTop,sq=1+(st.flash>0?st.flash*.35:0);
  g.save();g.translate(bx,y+BH);g.scale(1/sq,sq);g.translate(-bx,-(y+BH));
  g.fillStyle='rgba(120,70,170,.18)';g.beginPath();g.ellipse(bx,floorY+4,BW*.5,6,0,0,7);g.fill();
@@ -417,7 +420,7 @@ function drawBasket(bx,blue,suf){
  for(var i=1;i<5;i++){var yy=y+8+i*(BH-8)/5;g.beginPath();g.moveTo(x,yy);g.quadraticCurveTo(bx,yy+7,x+BW,yy);g.stroke()}
  for(var j=1;j<7;j++){var xx=x+j*BW/7;g.beginPath();g.moveTo(xx,y+8);g.lineTo(bx+(xx-bx)*.8,y+BH);g.stroke()}
  g.restore();
- drawFB(bx,y+8+(BH-8)*.52,BH*.44,suf,blue?'#1f3f73':'');
+ 
  var rg=g.createLinearGradient(0,y-4,0,y+14);rg.addColorStop(0,blue?'#eef7ff':'#fff0cf');rg.addColorStop(1,blue?'#a9d2fb':'#ffc47a');g.fillStyle=rg;rr(x-4,y-3,BW+8,16,8);g.fill();
  g.restore()}
 function drawFloor(){var gr=g.createLinearGradient(0,floorY,0,H);gr.addColorStop(0,'rgba(255,255,255,.75)');gr.addColorStop(1,'rgba(255,214,238,.9)');g.fillStyle=gr;rr(10,floorY,W-20,floorH-8,16);g.fill()}
@@ -432,7 +435,7 @@ function draw(sub){
  st.fruits.forEach(function(f){g.save();g.translate(f.x,f.y);g.rotate(f.rot);g.shadowColor='rgba(120,70,170,.25)';g.shadowBlur=10;g.shadowOffsetY=4;
   if(f.sp){g.globalAlpha=.55+.45*Math.sin(performance.now()/55+f.x);g.shadowColor='rgba(255,60,120,.95)';g.shadowBlur=24;g.shadowOffsetY=0}
   g.fillText(f.e,0,0);g.restore()});
- if(coop()&&isCoopPlay()){drawBasket(st.bx,false,'1');drawBasket(st.bx2,true,'2')}else drawBasket(st.bx,COLS&&curP===1,COLS?String(curP+1):'');
+ var intro=st.mode==='story';if(coop()&&isCoopPlay()){drawBasket(st.bx,false,'1',intro?'':'P1');drawBasket(st.bx2,true,'2',intro?'':'P2')}else drawBasket(st.bx,COLS&&curP===1,COLS?String(curP+1):'',intro?'':'P'+(COLS?curP+1:1));
  if(st.breakT>0&&st.mode==='play'){var n=Math.ceil(st.breakT),fr=st.breakT%1||1,sz=Math.min(W*.34,170)*(.85+.3*fr);g.save();g.globalAlpha=.3+.7*fr;g.textAlign='center';g.textBaseline='middle';g.font='800 '+sz+'px ui-rounded,"Segoe UI",system-ui,sans-serif';g.lineWidth=10;g.strokeStyle=(isCoopPlay()?st.coopBlue:(COLS&&curP===1))?'#5aa6f0':'#ff7eb6';g.lineJoin='round';g.strokeText(n,W/2,H*.38);g.fillStyle='#fff';g.fillText(n,W/2,H*.38);g.globalAlpha=.85;g.font='800 18px ui-rounded,"Segoe UI",system-ui,sans-serif';g.fillStyle='#4a2f73';g.fillText('Get ready…',W/2,H*.38+sz*.62);g.restore()}
  st.parts.forEach(function(p){g.globalAlpha=Math.max(0,p.life);g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,p.r*p.life+1,0,7);g.fill()});g.globalAlpha=1;
  g.font='800 22px ui-rounded,"Segoe UI",system-ui,sans-serif';g.fillStyle='#ff5fa2';
